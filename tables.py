@@ -63,28 +63,26 @@ class Program:
         label = self.cursor.fetchall()
         transportation_mode = 0
         if label == [(1,)]:
-            mode = open ('dataset/dataset/Data' + user_id + '/labels.txt', 'r')
+            mode = open ('dataset/dataset/Data/' + user_id + '/labels.txt', 'r')
             transportation_mode = mode.read().splitlines()
         return transportation_mode
-                
+
 
     def insert_activity (self, user_id, has_labels, transportation):
         path = 'dataset/dataset/Data/'+ user_id + '/Trajectory'
         for (root, dirs, files) in os.walk(path):
             for fil in files:
-                
                 length = sum(1 for line in open(path + '/' + fil))
+                
                 if length <=2506:                    
                     filen = open(path + '/' + fil, "r")
                     trackpoints_list = filen.read().splitlines()
                     filen.close()
-                    start_date = trackpoints_list[6].split(',')[5] + ' ' + trackpoints_list[6].split(',')[6]
-                    end_date = trackpoints_list[-1].split(',')[5] + ' ' + trackpoints_list[-1].split(',')[6]
-                    print (start_date)
-                    print(end_date)
-                    query = "INSERT INTO Activity (user_id, transportation_mode, start_date_time, end_date_time) VALUES (%s, %s, %s, %s)"
-                    #Denne funker ikke, men jeg har ikke  skjønt hva som er galt
-                    self.cursor.execute(query % (user_id, 'transportation', start_date, end_date))
+                    start_date = (trackpoints_list[6].split(',')[5] + trackpoints_list[6].split(',')[6]).replace('-','').replace(':','')
+                    end_date = (trackpoints_list[-1].split(',')[5] + trackpoints_list[-1].split(',')[6]).replace('-','').replace(':','')
+                    
+                    query = "INSERT INTO Activity (user_id, transportation_mode, start_date_time, end_date_time) VALUES (%s, '%s', %s, %s)"
+                    self.cursor.execute(query % (user_id, transportation, start_date, end_date))        
         self.db_connection.commit()
             
             
@@ -112,32 +110,38 @@ class Program:
         print(tabulate(rows, headers=self.cursor.column_names))
 
 
-def main():
-    ids = []
-    for (root,dirs,files) in os.walk('Dataset', topdown=True): 
-        if (root == 'dataset/dataset/Data'):
-            ids = (dirs)
-            
-    labels = open("dataset/dataset/labeled_ids.txt", "r")
-    has_labels = labels.read().splitlines()
-    labels.close()
+    def fetch_ids (self):
+        ids = []
+        for (root,dirs,files) in os.walk('dataset', topdown=True): 
+            if (root == 'dataset/dataset/Data'):
+                ids = (dirs)
+        return ids
 
+def main():
     program = None        
 
     try:
         program = Program()
-        transp = program.transportation(user_id='000')
-        program.drop_table(table_name="User")
-        program.drop_table(table_name="Activity")
-        program.drop_table(table_name="TrackPoint")
+        
+
+        ids = program.fetch_ids()
+            
+        labels = open("dataset/dataset/labeled_ids.txt", "r")
+        has_labels = labels.read().splitlines()
+        labels.close()
 
         program.create_table_user(table_name="User")
         program.create_table_activity(table_name="Activity")
         program.create_table_trackpoint(table_name="TrackPoint")
         program.insert_users(table_name="User", ids = ids, has_labels=has_labels)
-        
-        program.insert_activity(user_id='000', has_labels=has_labels, transportation=transp)
-        _ = program.fetch_data(table_name="Activity")        
+        for user in ids:
+            # transp = program.transportation(user_id=user)
+            program.insert_activity(user_id=user, has_labels=has_labels, transportation=0)
+
+        # transp = program.transportation(user_id='110')
+        # program.insert_activity(user_id='110', has_labels=has_labels, transportation=transp)
+
+        _ = program.fetch_data(table_name="Activity")       
         
         program.drop_table(table_name="User")
         program.drop_table(table_name="Activity")
