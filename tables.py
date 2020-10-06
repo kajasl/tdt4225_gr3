@@ -19,7 +19,7 @@ class Program:
         # This adds table_name to the %s variable and executes the query
         self.cursor.execute(query % table_name)
         self.db_connection.commit()
-#TODO add foreign key to both activity and trackpoint table
+#TODO add foreign key to both activity and trackpoint tableß
     def create_table_activity (self, table_name):
         query = """CREATE TABLE IF NOT EXISTS %s (
                    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
@@ -80,9 +80,17 @@ class Program:
                     filen.close()
                     start_date = (trackpoints_list[6].split(',')[5] + trackpoints_list[6].split(',')[6]).replace('-','').replace(':','')
                     end_date = (trackpoints_list[-1].split(',')[5] + trackpoints_list[-1].split(',')[6]).replace('-','').replace(':','')
-                    
+                    tran = 0
+                    if (transportation != 0):
+                        for i in range(1,len(transportation)-2):
+                            tran = transportation[i][:19].replace('/','').replace(':','').replace(' ','')
+                            if(tran == start_date):
+                                tran = transportation[i][40:]
+                            else:
+                                tran = 0
+                        
                     query = "INSERT INTO Activity (user_id, transportation_mode, start_date_time, end_date_time) VALUES (%s, '%s', %s, %s)"
-                    self.cursor.execute(query % (user_id, transportation, start_date, end_date))        
+                    self.cursor.execute(query % (user_id, tran, start_date, end_date))        
         self.db_connection.commit()
             
             
@@ -123,6 +131,10 @@ def main():
     try:
         program = Program()
         
+        
+        program.drop_table(table_name="User")
+        program.drop_table(table_name="Activity")
+        program.drop_table(table_name="TrackPoint")
 
         ids = program.fetch_ids()
             
@@ -135,11 +147,10 @@ def main():
         program.create_table_trackpoint(table_name="TrackPoint")
         program.insert_users(table_name="User", ids = ids, has_labels=has_labels)
         for user in ids:
-            # transp = program.transportation(user_id=user)
-            program.insert_activity(user_id=user, has_labels=has_labels, transportation=0)
+            print(user)
+            transp = program.transportation(user_id=user)
+            program.insert_activity(user_id=user, has_labels=has_labels, transportation=transp)
 
-        # transp = program.transportation(user_id='110')
-        # program.insert_activity(user_id='110', has_labels=has_labels, transportation=transp)
 
         _ = program.fetch_data(table_name="Activity")       
         
