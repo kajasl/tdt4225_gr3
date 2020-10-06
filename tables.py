@@ -143,14 +143,14 @@ class Program:
                         ##TODO lookup cursor.executemany 
                         batch_trackpoints.append(tuple([str(activity_id), latitude, longitude, altitude, days, date]))
                         print(tuple([str(activity_id), latitude, longitude, altitude, days, date]))
-                        query = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, '%s', %s, %s, %s, %s)"
-                        self.cursor.execute(query % (activity_id, latitude, longitude, altitude, days, date)) 
+                        # query = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s, %s)"
+                        # self.cursor.execute(query % (activity_id, latitude, longitude, altitude, days, date)) 
                         
                         
                         
 
-                    #query = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, '%s', %s, %s, %s, %s)"
-                    #self.cursor.executemany(query, batch_trackpoints) 
+                    query = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s, %s)"
+                    self.cursor.executemany(query, batch_trackpoints) 
 
                     activity_id += 1      
         self.db_connection.commit()
