@@ -86,13 +86,11 @@ class Program:
     def insert_activities_and_trackpoints (self, user_id, has_labels, transportation, activity_id_start):
 
         path = 'dataset/dataset/Data/'+ user_id + '/Trajectory'
-        print("start of func")
 
         #to keep incrementing activity id  for trackpoints
         activity_id = activity_id_start
 
         for (root, dirs, files) in os.walk(path):
-            print("os walk")
             for fil in files:
 
                 trackpoints_list = open(path + '/' + fil).read().splitlines()
@@ -123,7 +121,7 @@ class Program:
                     self.cursor.execute(query % (user_id, mode, start_date, end_date)) 
 
                     #should be trackpoints_list[6:] but only a few lines so execution is fast
-                    trackpoints_stripped = trackpoints_list[6:12]
+                    trackpoints_stripped = trackpoints_list[6:]
 
                     #list to hold trackpoint information to be able to executemany
                     batch_trackpoints = []
@@ -139,17 +137,16 @@ class Program:
 
 
                         #batch_trackpoints.append(tuple(trackpoint_line))
-                        ##trying to make executemany work to send a lot of trackpoints at the same time, but there is some issue about the tuple format 
-                        ##TODO lookup cursor.executemany 
+
                         batch_trackpoints.append(tuple([str(activity_id), latitude, longitude, altitude, days, date]))
-                        print(tuple([str(activity_id), latitude, longitude, altitude, days, date]))
+                        #print(tuple([str(activity_id), latitude, longitude, altitude, days, date]))
                         # query = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s, %s)"
                         # self.cursor.execute(query % (activity_id, latitude, longitude, altitude, days, date)) 
                         
                         
                         
 
-                    query = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s, %s)"
+                    query = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s, %s) "
                     self.cursor.executemany(query, batch_trackpoints) 
 
                     activity_id += 1      
@@ -208,10 +205,16 @@ def main():
             # program.insert_activity(user_id=user, has_labels=program.labeled_ids, transportation=0)
         
         #send activity id between each insert_activities_and_trackpoints to keep incrementing
-        transp = program.transportation(user_id = program.ids[0])
-        activity_id_continue = program.insert_activities_and_trackpoints(user_id = program.ids[0], has_labels = program.labeled_ids, transportation = transp, activity_id_start = 1)
-        transp = program.transportation(user_id = program.ids[10])
-        program.insert_activities_and_trackpoints(user_id = program.ids[10], has_labels = program.labeled_ids, transportation = transp, activity_id_start = activity_id_continue)
+        activity_id = 1
+        for id in program.ids:
+            print("id changed ------------------------->", id)
+            transp = program.transportation(user_id = id)
+            activity_id = program.insert_activities_and_trackpoints(user_id = id, has_labels = program.labeled_ids, transportation = transp, activity_id_start = activity_id)
+
+        # transp = program.transportation(user_id = program.ids[0])
+        # activity_id_continue = program.insert_activities_and_trackpoints(user_id = program.ids[0], has_labels = program.labeled_ids, transportation = transp, activity_id_start = 1)
+        # transp = program.transportation(user_id = program.ids[10])
+        # program.insert_activities_and_trackpoints(user_id = program.ids[10], has_labels = program.labeled_ids, transportation = transp, activity_id_start = activity_id_continue)
 
         _ = program.fetch_data(table_name="Activity")
         #_ = program.fetch_data(table_name="TrackPoint")      
