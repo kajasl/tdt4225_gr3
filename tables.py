@@ -2,6 +2,7 @@ from DbConnector import DbConnector
 from tabulate import tabulate
 from datetime import datetime
 import os
+import time
 
 
 class Program:
@@ -17,47 +18,51 @@ class Program:
 
     def create_table_user(self, table_name):
         query = """CREATE TABLE IF NOT EXISTS %s (
-                    id VARCHAR(3) NOT NULL PRIMARY KEY,
+                    id INT NOT NULL PRIMARY KEY,
                     has_labels BOOLEAN)
                 """
         # This adds table_name to the %s variable and executes the query
         self.cursor.execute(query % table_name)
         self.db_connection.commit()
-#TODO add foreign key to both activity and trackpoint table
+
+
     def create_table_activity (self, table_name):
         query = """CREATE TABLE IF NOT EXISTS %s (
                     id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-                    user_id INT NOT NULL, 
+                    user_id INT REFERENCES User(id),  
                     transportation_mode VARCHAR(50),
                     start_date_time DATETIME,
-                    end_date_time DATETIME
+                    end_date_time DATETIME,
+
+                    CONSTRAINT activity_fk 
+                    FOREIGN KEY (user_id) REFERENCES User(id) 
+                    ON UPDATE CASCADE ON DELETE CASCADE
                     )
                 """
-                           
-                # FOREIGN KEY (user_id) 
-                #     REFERENCES User(id) 
-                #     ON DELETE CASCADE
         # This adds table_name to the %s variable and executes the query
         self.cursor.execute(query % table_name)
         self.db_connection.commit()
 
+
     def create_table_trackpoint (self, table_name):
         query = """CREATE TABLE IF NOT EXISTS %s (
                     id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-                    activity_id INT NOT NULL, 
+                    activity_id INT REFERENCES Activity(id), 
                     lat DOUBLE,
                     lon DOUBLE,
                     altitude INT,
                     date_days DOUBLE,
-                    date_time DATETIME
+                    date_time DATETIME,
+
+                    CONSTRAINT trackpoint_fk 
+                    FOREIGN KEY (activity_id) REFERENCES Activity(id) 
+                    ON UPDATE CASCADE ON DELETE CASCADE
                     )
                 """
-                #     FOREIGN KEY (activity_id) 
-                #         REFERENCES Activity(id)
-                #         ON DELETE CASCADE
         # This adds table_name to the %s variable and executes the query
         self.cursor.execute(query % table_name)
         self.db_connection.commit()
+
 
     def insert_users(self, table_name):
         for iden in self.ids:
@@ -74,13 +79,22 @@ class Program:
         query_label = "SELECT has_labels FROM User WHERE id = %s"
         self.cursor.execute(query_label % user_id)
         label = self.cursor.fetchall()
-        transportation_mode = 'none'
+        transportation = 'NULL'
         if label == [(True,)]:
             mode = open ('dataset/dataset/Data/' + user_id +'/labels.txt', 'r')
             transportation_mode = mode.read().splitlines()
             #pop redundant info first line
             transportation_mode.pop(0)
-        return transportation_mode
+
+            transportation = {}
+
+            for activity in transportation_mode:
+                transp_mode = activity.split('\t')
+                label_start_end_date = transp_mode[0].replace('/','').replace(':','').replace(' ','') + transp_mode[1].replace('/','').replace(':','').replace(' ','')
+                transportation.update( {label_start_end_date : transp_mode[2] } )
+
+
+        return transportation
                 
 
     def insert_activities_and_trackpoints (self, user_id, has_labels, transportation, activity_id_start):
@@ -102,18 +116,15 @@ class Program:
                     mode = 'none'
                     #a bit heavy to go through entire labels.txt every time to check if transportation mode should be added to activity
                     if transportation != 'none':
-                        for activity in transportation:
-                            activity_list = activity.split('\t')
 
-                            # start_date = datetime.strptime(activity_list[0], "%Y/%m/%d %H:%M:%S")
-                            # end_date = datetime.strptime(activity_list[1], "%Y/%m/%d %H:%M:%S")
+                        # start_date = datetime.strptime(activity_list[0], "%Y/%m/%d %H:%M:%S")
+                        # end_date = datetime.strptime(activity_list[1], "%Y/%m/%d %H:%M:%S")
 
-                            label_start_date = activity_list[0].replace('/','').replace(':','').replace(' ','')
-                            label_end_date = activity_list[1].replace('/','').replace(':','').replace(' ','')
-                            
-                            #check if activity should be labeled a transportation mode. Works only for transportation modes that last the entire activity
-                            if label_start_date == start_date and label_end_date == end_date:
-                                mode = activity_list[2]
+                        start_end_date = start_date + end_date
+                        #print(transportation['hello'])
+                        #check if activity should be labeled a transportation mode. Works only for transportation modes that last the entire activity
+                        if start_end_date in transportation:
+                            mode = transportation[start_end_date]
 
 
 
@@ -189,9 +200,12 @@ def main():
     try:
         program = Program()
 
-        program.drop_table(table_name="User")
-        program.drop_table(table_name="Activity")
+        start = time.time()
+
         program.drop_table(table_name="TrackPoint")
+        program.drop_table(table_name="Activity")
+        program.drop_table(table_name="User")
+        
 
 
         program.create_table_user(table_name="User")
@@ -199,10 +213,6 @@ def main():
         program.create_table_trackpoint(table_name="TrackPoint")
         program.insert_users(table_name="User")
         #_ = program.fetch_data(table_name="User") 
-
-        # for user in program.ids:
-            # transp = program.transportation(user_id=user)
-            # program.insert_activity(user_id=user, has_labels=program.labeled_ids, transportation=0)
         
         #send activity id between each insert_activities_and_trackpoints to keep incrementing
         activity_id = 1
@@ -211,12 +221,13 @@ def main():
             transp = program.transportation(user_id = id)
             activity_id = program.insert_activities_and_trackpoints(user_id = id, has_labels = program.labeled_ids, transportation = transp, activity_id_start = activity_id)
 
-        # transp = program.transportation(user_id = program.ids[0])
+
+        # transp = program.transportation(user_id = program.ids[10])
         # activity_id_continue = program.insert_activities_and_trackpoints(user_id = program.ids[0], has_labels = program.labeled_ids, transportation = transp, activity_id_start = 1)
         # transp = program.transportation(user_id = program.ids[10])
         # program.insert_activities_and_trackpoints(user_id = program.ids[10], has_labels = program.labeled_ids, transportation = transp, activity_id_start = activity_id_continue)
 
-        _ = program.fetch_data(table_name="Activity")
+        #_ = program.fetch_data(table_name="Activity")
         #_ = program.fetch_data(table_name="TrackPoint")      
         
         # program.drop_table(table_name="User")
@@ -225,6 +236,11 @@ def main():
         # Check that the table is dropped
 
         program.show_tables()
+        #takes around 30 min to insert, should be optimalized
+        end = time.time()
+        hours, rem = divmod(end-start, 3600)
+        minutes, seconds = divmod(rem, 60)
+        print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
 
 
     except Exception as e:
