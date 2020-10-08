@@ -112,7 +112,8 @@ class Program:
 
                     start_date = (trackpoints_list[6].split(',')[5] +" "+ trackpoints_list[6].split(',')[6]).replace('-','').replace(':','').replace(' ','')
                     end_date = (trackpoints_list[-1].split(',')[5] +" "+ trackpoints_list[-1].split(',')[6]).replace('-','').replace(':','').replace(' ','')
-    
+                    
+                    #couldve used NULL for database functionality
                     mode = 'none'
                     #a bit heavy to go through entire labels.txt every time to check if transportation mode should be added to activity
                     if transportation != 'none':
@@ -173,10 +174,25 @@ class Program:
         #query = "SELECT * FROM %s"
         self.cursor.execute(query % table_name)
         rows = self.cursor.fetchall()
-        print("Data from table %s, raw format:" % table_name)
-        print(rows)
+        #print("Data from table %s, raw format:" % table_name)
+        #print(rows)
         # Using tabulate to show the table in a nice way
         print("Data from table %s, tabulated:" % table_name)
+        print(tabulate(rows, headers=self.cursor.column_names))
+        return rows
+
+    #kjør spørringer på denne, legg til x antall tables som siste argument for x tabeller
+    def fetch_data_multiple_tables(self, query, *table_names):
+        #query = "SELECT * FROM %s"
+        self.cursor.execute(query % table_names)
+        rows = self.cursor.fetchall()
+        #print("Data from table %s, raw format:" % table_name)
+        #print(rows)
+        # Using tabulate to show the table in a nice way
+        number_of_tables = "%s," * len(table_names)
+        print(number_of_tables)
+        string = "Data from table " + number_of_tables + " tabulated:"
+        print(string % table_names)
         print(tabulate(rows, headers=self.cursor.column_names))
         return rows
 
@@ -202,7 +218,23 @@ def main():
 
         start = time.time()
 
+        # screenshot of 11 first elements of each table to get a transportation mode
+        # program.fetch_data("Activity", "SELECT * FROM %s LIMIT 11")
+        # program.fetch_data("TrackPoint", "SELECT * FROM %s LIMIT 11")
+        # program.fetch_data("User", "SELECT * FROM %s LIMIT 11")
 
+
+        #task 2.1
+        # program.fetch_data("Activity", "SELECT count(*) FROM %s")
+        # program.fetch_data("TrackPoint", "SELECT count(*) FROM %s")
+        # program.fetch_data("User", "SELECT count(*) FROM %s")
+
+        #task 2.2
+        #couldve used Avg but this was simplier
+        #program.fetch_data_multiple_tables("SELECT (SELECT count(*) FROM %s) / (SELECT count(User.id)  FROM %s)", "Activity", "User")
+
+        #task 2.3
+        program.fetch_data_multiple_tables("SELECT %s)", "Activity", "User")
 
         # program.drop_table(table_name="TrackPoint")
         # program.drop_table(table_name="Activity")
@@ -239,7 +271,7 @@ def main():
         end = time.time()
         hours, rem = divmod(end-start, 3600)
         minutes, seconds = divmod(rem, 60)
-        print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
+        print("time taken -----> HH:MM:SSss {:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
 
 
 
