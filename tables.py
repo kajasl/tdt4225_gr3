@@ -196,6 +196,17 @@ class Program:
         print(tabulate(rows, headers=self.cursor.column_names))
         return rows
 
+    def fetch_data_only_query(self, query):
+        #query = "SELECT * FROM %s"
+        self.cursor.execute(query)
+        rows = self.cursor.fetchall()
+        #print("Data from table %s, raw format:" % table_name)
+        #print(rows)
+        # Using tabulate to show the table in a nice way
+        string = "Data from table tabulated:"
+        print(tabulate(rows, headers=self.cursor.column_names))
+        return rows
+
     def drop_table(self, table_name):
         print("Dropping table %s..." % table_name)
         query = "DROP TABLE %s"
@@ -234,7 +245,16 @@ def main():
         #program.fetch_data_multiple_tables("SELECT (SELECT count(*) FROM %s) / (SELECT count(User.id)  FROM %s)", "Activity", "User")
 
         #task 2.3
-        program.fetch_data_multiple_tables("SELECT %s)", "Activity", "User")
+        # program.fetch_data_only_query("SELECT Activity.user_id, count(Activity.id) FROM Activity JOIN User WHERE User.id = Activity.user_id GROUP BY User.id ORDER BY count(Activity.id) DESC LIMIT 20")
+
+        #task 2.4
+        #program.fetch_data_only_query("SELECT DISTINCT User.id, Activity.transportation_mode FROM Activity JOIN User WHERE User.id = Activity.user_id AND Activity.transportation_mode = 'taxi' GROUP BY User.id")
+
+        #task 2.5
+        #program.fetch_data_only_query("SELECT Activity.transportation_mode, count(Activity.id) FROM Activity GROUP BY Activity.transportation_mode HAVING Activity.transportation_mode != 'none' ")
+
+        #task 2.6
+        program.fetch_data_only_query("SELECT YEAR(Activity.start_date_time), count(Activity.id) FROM Activity GROUP BY YEAR(Activity.start_date_time)")
 
         # program.drop_table(table_name="TrackPoint")
         # program.drop_table(table_name="Activity")
