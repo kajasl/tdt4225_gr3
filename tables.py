@@ -168,9 +168,9 @@ class Program:
             
             
             
-
-    def fetch_data(self, table_name):
-        query = "SELECT * FROM %s"
+    #kjør spørringer på denne, bare endre query til hva du vil
+    def fetch_data(self, table_name, query):
+        #query = "SELECT * FROM %s"
         self.cursor.execute(query % table_name)
         rows = self.cursor.fetchall()
         print("Data from table %s, raw format:" % table_name)
@@ -202,30 +202,29 @@ def main():
 
         start = time.time()
 
-        program.drop_table(table_name="TrackPoint")
-        program.drop_table(table_name="Activity")
-        program.drop_table(table_name="User")
+
+
+        # program.drop_table(table_name="TrackPoint")
+        # program.drop_table(table_name="Activity")
+        # program.drop_table(table_name="User")
         
 
 
-        program.create_table_user(table_name="User")
-        program.create_table_activity(table_name="Activity")
-        program.create_table_trackpoint(table_name="TrackPoint")
-        program.insert_users(table_name="User")
+        # program.create_table_user(table_name="User")
+        # program.create_table_activity(table_name="Activity")
+        # program.create_table_trackpoint(table_name="TrackPoint")
+        # program.insert_users(table_name="User")
         #_ = program.fetch_data(table_name="User") 
         
         #send activity id between each insert_activities_and_trackpoints to keep incrementing
-        activity_id = 1
-        for id in program.ids:
-            print("id changed ------------------------->", id)
-            transp = program.transportation(user_id = id)
-            activity_id = program.insert_activities_and_trackpoints(user_id = id, has_labels = program.labeled_ids, transportation = transp, activity_id_start = activity_id)
+        # activity_id = 1
+        # for id in program.ids:
+        #     print("id changed ------------------------->", id)
+        #     transp = program.transportation(user_id = id)
+        #     activity_id = program.insert_activities_and_trackpoints(user_id = id, has_labels = program.labeled_ids, transportation = transp, activity_id_start = activity_id)
 
 
-        # transp = program.transportation(user_id = program.ids[10])
-        # activity_id_continue = program.insert_activities_and_trackpoints(user_id = program.ids[0], has_labels = program.labeled_ids, transportation = transp, activity_id_start = 1)
-        # transp = program.transportation(user_id = program.ids[10])
-        # program.insert_activities_and_trackpoints(user_id = program.ids[10], has_labels = program.labeled_ids, transportation = transp, activity_id_start = activity_id_continue)
+
 
         #_ = program.fetch_data(table_name="Activity")
         #_ = program.fetch_data(table_name="TrackPoint")      
@@ -243,11 +242,20 @@ def main():
         print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
 
 
+
+        # transp = program.transportation(user_id = program.ids[10])
+        # activity_id_continue = program.insert_activities_and_trackpoints(user_id = program.ids[0], has_labels = program.labeled_ids, transportation = transp, activity_id_start = 1)
+        # transp = program.transportation(user_id = program.ids[10])
+        # program.insert_activities_and_trackpoints(user_id = program.ids[10], has_labels = program.labeled_ids, transportation = transp, activity_id_start = activity_id_continue)
+
+
     except Exception as e:
         print("ERROR: Failed to use database:", e)
     finally:
         if program:
             program.connection.close_connection()
+
+    
 
 if __name__ == '__main__':
     main()
