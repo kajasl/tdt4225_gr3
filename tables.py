@@ -3,6 +3,7 @@ from tabulate import tabulate
 from datetime import datetime
 import os
 import time
+from haversine import haversine, Unit
 
 
 class Program:
@@ -207,6 +208,15 @@ class Program:
         print(tabulate(rows, headers=self.cursor.column_names))
         return rows
 
+    def fetch_data_without_print(self, query):
+        #query = "SELECT * FROM %s"
+        self.cursor.execute(query)
+        rows = self.cursor.fetchall()
+        #print("Data from table %s, raw format:" % table_name)
+        #print(rows)
+        # Using tabulate to show the table in a nice way
+        return rows
+
     def drop_table(self, table_name):
         print("Dropping table %s..." % table_name)
         query = "DROP TABLE %s"
@@ -217,6 +227,14 @@ class Program:
         rows = self.cursor.fetchall()
         print(tabulate(rows, headers=self.cursor.column_names))
 
+    def calc_altitude(self):
+        self.cursor
+        rows = self.cursor.execute("SET @alt=0,@latest=0,@activity_id=''; select B.* from (select Trackpoint.altitude,A.change,IF(@activity_id<>A.activity_id,1,0) as LATEST,@activity_id:=A.activity_id as activity_id from (select activity_id,altitude-@alt as change, @alt:=altitude curr_altitude from TrackPoint WHERE activity_id = '300' order by activity_id) A order by activity_id) B where B.LATEST=1;")
+        #rows = self.cursor.fetchall()
+        #self.cursor.execute("")
+        #query = "SELECT activity_id, @alt, @latest=altitude FROM TrackPoint WHERE activity_id='20';"
+        #rows = self.cursor.execute(query)
+        print(tabulate(rows, headers=self.cursor.column_names))
 
 
 
@@ -254,7 +272,26 @@ def main():
         #program.fetch_data_only_query("SELECT Activity.transportation_mode, count(Activity.id) FROM Activity GROUP BY Activity.transportation_mode HAVING Activity.transportation_mode != 'none' ")
 
         #task 2.6
-        program.fetch_data_only_query("SELECT YEAR(Activity.start_date_time), count(Activity.id) FROM Activity GROUP BY YEAR(Activity.start_date_time)")
+        #program.fetch_data_only_query("SELECT YEAR(Activity.start_date_time), count(Activity.id) FROM Activity GROUP BY YEAR(Activity.start_date_time)")
+
+        # Task 2.8
+        query = """
+            SELECT total_altitude.user_id AS "id", total_altitude.altitude_m AS "Total altitude in meters"
+            FROM ( 
+                SELECT 
+                    Activity.user_id AS user_id, 
+                    SUM(CASE WHEN tp1.altitude IS NOT NULL AND
+                    tp2.altitude IS NOT NULL 
+                    THEN (tp2.altitude - tp1.altitude) * 0.3048000 ELSE 0 END) AS altitude_m 
+                FROM 
+                    TrackPoint AS tp1 JOIN TrackPoint AS tp2 ON tp1.activity_id=tp2.activity_id AND 
+                    tp1.id+1 = tp2.id JOIN Activity ON Activity.id = tp1.activity_id AND Activity.id = tp2.activity_id 
+                WHERE tp2.altitude > tp1.altitude 
+                GROUP BY Activity.user_id ) AS total_altitude 
+            ORDER BY altitude_m DESC 
+            LIMIT 20;
+        """
+        program.fetch_data_only_query(query)
 
         # program.drop_table(table_name="TrackPoint")
         # program.drop_table(table_name="Activity")
