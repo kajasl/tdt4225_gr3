@@ -319,7 +319,18 @@ def main():
         #     GROUP BY User.id
         #     LIMIT 20"""
         # )
-
+        
+        #task 2.9
+        # program.fetch_data_only_query(
+        #     """SELECT Activity.user_id, COUNT(Activity.id)   
+        #     FROM Activity 
+        #     WHERE Activity.id IN (
+        #         SELECT t1.activity_id
+        #         From TrackPoint AS t1 INNER JOIN TrackPoint AS t2 ON t1.activity_id = t2.activity_id AND t1.id+1 = t2.id
+        #         WHERE (t2.date_time < DATE_ADD(t1.date_time, INTERVAL 5 MINUTE)))
+        #     GROUP BY Activity.user_id
+        #     """)  
+        
         # task 2.10 #Decimal rounds up latitude should be truncated instead, but no time to fix
         # program.fetch_data_only_query(
         #     """SELECT  User.id, Activity.id, TrackPoint.lat, TrackPoint.lon 
