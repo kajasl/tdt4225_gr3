@@ -3,7 +3,11 @@ from tabulate import tabulate
 from datetime import datetime
 import os
 import time
+<<<<<<< HEAD
 from haversine import haversine, Unit
+=======
+from haversine import haversine
+>>>>>>> 94e158101f53892551a5439c18c469867033c399
 
 
 class Program:
@@ -227,6 +231,7 @@ class Program:
         rows = self.cursor.fetchall()
         print(tabulate(rows, headers=self.cursor.column_names))
 
+<<<<<<< HEAD
     def calc_altitude(self):
         self.cursor
         rows = self.cursor.execute("SET @alt=0,@latest=0,@activity_id=''; select B.* from (select Trackpoint.altitude,A.change,IF(@activity_id<>A.activity_id,1,0) as LATEST,@activity_id:=A.activity_id as activity_id from (select activity_id,altitude-@alt as change, @alt:=altitude curr_altitude from TrackPoint WHERE activity_id = '300' order by activity_id) A order by activity_id) B where B.LATEST=1;")
@@ -235,6 +240,25 @@ class Program:
         #query = "SELECT activity_id, @alt, @latest=altitude FROM TrackPoint WHERE activity_id='20';"
         #rows = self.cursor.execute(query)
         print(tabulate(rows, headers=self.cursor.column_names))
+=======
+    #task 2.7
+    def calculate_distance_haversine(self):
+        query = """SELECT lat, lon 
+            FROM TrackPoint join Activity 
+            ON Activity.id = TrackPoint.activity_id  
+            WHERE Activity.user_id='112' 
+            AND YEAR(date_time)='2008' 
+            AND Activity.transportation_mode='walk';"""
+        self.cursor.execute(query)
+
+        trackpoints = self.cursor.fetchall()
+        sum_distance = 0
+        for i in range(1, len(trackpoints)):
+            sum_distance += haversine(trackpoints[i-1], trackpoints[i])
+        #assume metric values
+        print("User 112 in the year 2008 has walked: " + str("%.1f" % sum_distance) + "KM")
+
+>>>>>>> 94e158101f53892551a5439c18c469867033c399
 
 
 
@@ -263,10 +287,23 @@ def main():
         #program.fetch_data_multiple_tables("SELECT (SELECT count(*) FROM %s) / (SELECT count(User.id)  FROM %s)", "Activity", "User")
 
         #task 2.3
-        # program.fetch_data_only_query("SELECT Activity.user_id, count(Activity.id) FROM Activity JOIN User WHERE User.id = Activity.user_id GROUP BY User.id ORDER BY count(Activity.id) DESC LIMIT 20")
+        # program.fetch_data_only_query(
+        #     """SELECT Activity.user_id, count(Activity.id) 
+        #     FROM Activity JOIN User 
+        #     WHERE User.id = Activity.user_id 
+        #     GROUP BY User.id 
+        #     ORDER BY count(Activity.id) 
+        #     DESC LIMIT 20"""
+        # )
 
         #task 2.4
-        #program.fetch_data_only_query("SELECT DISTINCT User.id, Activity.transportation_mode FROM Activity JOIN User WHERE User.id = Activity.user_id AND Activity.transportation_mode = 'taxi' GROUP BY User.id")
+        # program.fetch_data_only_query(
+        #     """SELECT DISTINCT User.id, Activity.transportation_mode 
+        #     FROM Activity JOIN User 
+        #     WHERE User.id = Activity.user_id 
+        #     AND Activity.transportation_mode = 'taxi' 
+        #     GROUP BY User.id"""
+        # )
 
         #task 2.5
         #program.fetch_data_only_query("SELECT Activity.transportation_mode, count(Activity.id) FROM Activity GROUP BY Activity.transportation_mode HAVING Activity.transportation_mode != 'none' ")
@@ -275,23 +312,84 @@ def main():
         #program.fetch_data_only_query("SELECT YEAR(Activity.start_date_time), count(Activity.id) FROM Activity GROUP BY YEAR(Activity.start_date_time)")
 
         # Task 2.8
-        query = """
-            SELECT total_altitude.user_id AS "id", total_altitude.altitude_m AS "Total altitude in meters"
-            FROM ( 
-                SELECT 
-                    Activity.user_id AS user_id, 
-                    SUM(CASE WHEN tp1.altitude IS NOT NULL AND
-                    tp2.altitude IS NOT NULL 
-                    THEN (tp2.altitude - tp1.altitude) * 0.3048000 ELSE 0 END) AS altitude_m 
-                FROM 
-                    TrackPoint AS tp1 JOIN TrackPoint AS tp2 ON tp1.activity_id=tp2.activity_id AND 
-                    tp1.id+1 = tp2.id JOIN Activity ON Activity.id = tp1.activity_id AND Activity.id = tp2.activity_id 
-                WHERE tp2.altitude > tp1.altitude 
-                GROUP BY Activity.user_id ) AS total_altitude 
-            ORDER BY altitude_m DESC 
-            LIMIT 20;
-        """
-        program.fetch_data_only_query(query)
+        # query = """
+        #     SELECT total_altitude.user_id AS "id", total_altitude.altitude_m AS "Total altitude in meters"
+        #     FROM ( 
+        #         SELECT 
+        #             Activity.user_id AS user_id, 
+        #             SUM(CASE WHEN tp1.altitude IS NOT NULL AND
+        #             tp2.altitude IS NOT NULL 
+        #             THEN (tp2.altitude - tp1.altitude) * 0.3048000 ELSE 0 END) AS altitude_m 
+        #         FROM 
+        #             TrackPoint AS tp1 JOIN TrackPoint AS tp2 ON tp1.activity_id=tp2.activity_id AND 
+        #             tp1.id+1 = tp2.id JOIN Activity ON Activity.id = tp1.activity_id AND Activity.id = tp2.activity_id 
+        #         WHERE tp2.altitude > tp1.altitude 
+        #         GROUP BY Activity.user_id ) AS total_altitude 
+        #     ORDER BY altitude_m DESC 
+        #     LIMIT 20;
+        # """
+        # program.fetch_data_only_query(query)
+
+
+        # program.fetch_data_only_query(
+        #     """SELECT Activity.transportation_mode, count(Activity.id) 
+        #     FROM Activity 
+        #     GROUP BY Activity.transportation_mode 
+        #     HAVING Activity.transportation_mode != 'none' """
+        # )
+
+        #task 2.6a
+        # program.fetch_data_only_query(
+        #     """SELECT YEAR(Activity.start_date_time), count(Activity.id) 
+        #     FROM Activity 
+        #     GROUP BY YEAR(Activity.start_date_time)"""
+        # )
+
+        #task 2.6b
+        # program.fetch_data_only_query(
+        #     """SELECT YEAR(Activity.start_date_time) as year, 
+        #     count(Activity.id), 
+        #     SUM(TIMESTAMPDIFF(hour, Activity.start_date_time, Activity.end_date_time)) as hours,
+        #     SUM(TIMESTAMPDIFF(minute, Activity.start_date_time, Activity.end_date_time)) as minutes 
+        #     FROM Activity GROUP BY YEAR(Activity.start_date_time)"""
+        # )
+        
+        #task 2.7
+        # program.calculate_distance_haversine()
+
+        #fungerer ikke lag() er ikke innebygd
+        #task 2.8
+        # program.fetch_data_only_query(
+        #     """SELECT User.id, SUM(select TrackPoint.*, greatest(altitude - lag(TrackPoint.altitude) over (order by TrackPoint.id), 0)) from TrackPoint)
+        #     FROM TrackPoint JOIN Activity JOIN TrackPoint
+        #     WHERE TrackPoint.activity_id = Activity.id
+        #     AND Activity.user_id = User.id
+        #     AND TrackPoint.altitude != -777
+        #     GROUP BY User.id
+        #     LIMIT 20"""
+        # )
+        
+        #task 2.9
+        # program.fetch_data_only_query(
+        #     """SELECT Activity.user_id, COUNT(Activity.id)   
+        #     FROM Activity 
+        #     WHERE Activity.id IN (
+        #         SELECT t1.activity_id
+        #         From TrackPoint AS t1 INNER JOIN TrackPoint AS t2 ON t1.activity_id = t2.activity_id AND t1.id+1 = t2.id
+        #         WHERE (t2.date_time < DATE_ADD(t1.date_time, INTERVAL 5 MINUTE)))
+        #     GROUP BY Activity.user_id
+        #     """)  
+        
+        # task 2.10 #Decimal rounds up latitude should be truncated instead, but no time to fix
+        # program.fetch_data_only_query(
+        #     """SELECT  User.id, Activity.id, TrackPoint.lat, TrackPoint.lon 
+        #     FROM TrackPoint 
+        #     INNER JOIN Activity ON TrackPoint.activity_id = Activity.id
+        #     INNER JOIN User ON User.id = Activity.user_id
+        #     WHERE cast(TrackPoint.lat as decimal(5,3)) = 39.916 
+        #     AND cast(TrackPoint.lon as decimal(6,3))  =  116.397
+        #     """
+        # )
 
         # program.drop_table(table_name="TrackPoint")
         # program.drop_table(table_name="Activity")
@@ -314,28 +412,12 @@ def main():
 
 
 
-
-        #_ = program.fetch_data(table_name="Activity")
-        #_ = program.fetch_data(table_name="TrackPoint")      
-        
-        # program.drop_table(table_name="User")
-        # program.drop_table(table_name="Activity")
-        # program.drop_table(table_name="TrackPoint")
-        # Check that the table is dropped
-
         program.show_tables()
         #takes around 30 min to insert, should be optimalized
         end = time.time()
         hours, rem = divmod(end-start, 3600)
         minutes, seconds = divmod(rem, 60)
         print("time taken -----> HH:MM:SSss {:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
-
-
-
-        # transp = program.transportation(user_id = program.ids[10])
-        # activity_id_continue = program.insert_activities_and_trackpoints(user_id = program.ids[0], has_labels = program.labeled_ids, transportation = transp, activity_id_start = 1)
-        # transp = program.transportation(user_id = program.ids[10])
-        # program.insert_activities_and_trackpoints(user_id = program.ids[10], has_labels = program.labeled_ids, transportation = transp, activity_id_start = activity_id_continue)
 
 
     except Exception as e:
