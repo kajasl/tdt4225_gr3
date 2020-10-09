@@ -1,6 +1,7 @@
 from DbConnector import DbConnector
 from tabulate import tabulate
 from datetime import datetime
+from haversine import haversine
 import os
 import time
 
@@ -165,7 +166,7 @@ class Program:
         self.db_connection.commit()
         return activity_id
 
-
+    
             
             
             
@@ -217,8 +218,31 @@ class Program:
         rows = self.cursor.fetchall()
         print(tabulate(rows, headers=self.cursor.column_names))
 
+    def getTotalWalkingDistance(self):
+        activities = {}
+        total = 0
+        cursor = self.fetch_data_only_query(
+            """SELECT TrackPoint.lon, TrackPoint.lat, TrackPoint.activity_id    
+            FROM TrackPoint 
+            WHERE TrackPoint.activity_id IN (SELECT Activity.id 
+                                            From Activity 
+                                            WHERE Activity.user_id = '112' AND Activity.transportation_mode = 'walk' AND YEAR(Activity.start_date_time) = '2008' AND YEAR(Activity.end_date_time) = '2008')
+            """)
 
+        for lon, lat, act_id in cursor:
+            if(act_id in activities):
+                point = (lon, lat)
+                activities[act_id].append(point)
+            else:
+                point = (lon, lat)
+                activities[act_id] = [point]
 
+        for act, points in activities.items(): 
+            for i in range(len(points)-1):
+                total += haversine(points[i], points[i+1])
+
+        print("User 112 have walked in 2008 a total of",total,"km")
+        return total
 
 def main():
 
@@ -254,8 +278,12 @@ def main():
         #program.fetch_data_only_query("SELECT Activity.transportation_mode, count(Activity.id) FROM Activity GROUP BY Activity.transportation_mode HAVING Activity.transportation_mode != 'none' ")
 
         #task 2.6
-        program.fetch_data_only_query("SELECT YEAR(Activity.start_date_time), count(Activity.id) FROM Activity GROUP BY YEAR(Activity.start_date_time)")
+        #program.fetch_data_only_query("SELECT YEAR(Activity.start_date_time), count(Activity.id) FROM Activity GROUP BY YEAR(Activity.start_date_time)")
 
+        #task 2.7
+        program.getTotalWalkingDistance()
+
+        
         # program.drop_table(table_name="TrackPoint")
         # program.drop_table(table_name="Activity")
         # program.drop_table(table_name="User")
