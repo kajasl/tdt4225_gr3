@@ -231,7 +231,6 @@ class Program:
         rows = self.cursor.fetchall()
         print(tabulate(rows, headers=self.cursor.column_names))
 
-<<<<<<< HEAD
     def calc_altitude(self):
         self.cursor
         rows = self.cursor.execute("SET @alt=0,@latest=0,@activity_id=''; select B.* from (select Trackpoint.altitude,A.change,IF(@activity_id<>A.activity_id,1,0) as LATEST,@activity_id:=A.activity_id as activity_id from (select activity_id,altitude-@alt as change, @alt:=altitude curr_altitude from TrackPoint WHERE activity_id = '300' order by activity_id) A order by activity_id) B where B.LATEST=1;")
@@ -240,7 +239,6 @@ class Program:
         #query = "SELECT activity_id, @alt, @latest=altitude FROM TrackPoint WHERE activity_id='20';"
         #rows = self.cursor.execute(query)
         print(tabulate(rows, headers=self.cursor.column_names))
-=======
     #task 2.7
     def calculate_distance_haversine(self):
         query = """SELECT lat, lon 
@@ -258,7 +256,6 @@ class Program:
         #assume metric values
         print("User 112 in the year 2008 has walked: " + str("%.1f" % sum_distance) + "KM")
 
->>>>>>> 94e158101f53892551a5439c18c469867033c399
 
 
 
